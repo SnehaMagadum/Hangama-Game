@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hangman — 18 categories, 2700 levels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#141033; --ink-2:#1d1750; --panel:#241c5e; --panel-2:#2e2472;
+  --line:rgba(255,255,255,.14); --cream:#F5F0E6; --muted:#b4acd8;
+  --amber:#FFB43D; --amber-deep:#E0881A; --mint:#4ADE9E; --rose:#FF6B7A;
+  --c:#FFB43D;
+  --r-lg:22px; --r-md:14px; --r-sm:10px;
+  --display:"Fredoka","Trebuchet MS",sans-serif;
+  --body:"Nunito","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;overflow-x:hidden}
+body{
+  background:var(--ink);
+  background-image:radial-gradient(circle at 50% 0%,rgba(255,180,61,.26),transparent 60%);
+  background-repeat:no-repeat;background-size:100% 520px;
+  color:var(--cream);font-family:var(--body);min-height:100vh;-webkit-text-size-adjust:100%;
+}
+.wrap{max-width:880px;margin:0 auto;padding:18px 16px 56px}
+button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:none}
+button:focus-visible{outline:3px solid var(--amber);outline-offset:3px;border-radius:8px}
+h1,h2,h3{font-family:var(--display);font-weight:600;margin:0}
+.screen{display:none;animation:in .22s ease}
+.screen.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.hero{text-align:center;padding:24px 0 8px}
+.mark{width:88px;height:88px;margin:0 auto 4px;display:block}
+.title{font-family:var(--display);font-size:clamp(44px,12vw,78px);line-height:.95;font-weight:700;
+  letter-spacing:.02em;text-shadow:0 5px 0 var(--amber-deep),0 7px 22px rgba(0,0,0,.45)}
+.tagline{color:var(--muted);font-size:16px;margin:14px 0 24px;line-height:1.5}
+.stack{display:flex;flex-direction:column;gap:12px;max-width:340px;margin:0 auto}
+.btn{display:block;width:100%;padding:16px 18px;border-radius:var(--r-md);font-family:var(--display);
+  font-size:19px;font-weight:600;background:var(--panel);box-shadow:0 4px 0 rgba(0,0,0,.4);
+  transition:transform .08s,background .15s}
+.btn:hover{background:var(--panel-2)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.4)}
+.btn.primary{background:var(--amber);color:#2b1a00;box-shadow:0 5px 0 var(--amber-deep)}
+.btn.primary:hover{background:#ffc25e}
+.btn.ghost{background:transparent;border:1px solid var(--line);box-shadow:none}
+.btn.danger{background:rgba(255,107,122,.16);border:1px solid rgba(255,107,122,.5);color:var(--rose);box-shadow:none}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.totals{margin:28px auto 0;max-width:460px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center}
+.tile{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:var(--r-md);padding:13px 8px}
+.tile b{display:block;font-family:var(--display);font-size:23px;color:var(--amber)}
+.tile span{font-size:12.5px;color:var(--muted)}
+.bar{height:9px;border-radius:9px;background:rgba(0,0,0,.35);overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--mint));transition:width .6s ease}
+
+.pagehead{display:flex;align-items:center;gap:12px;margin:6px 0 18px;flex-wrap:wrap}
+.back{padding:9px 14px;border-radius:999px;border:1px solid var(--line);font-size:14px;font-weight:700}
+.back:hover{background:rgba(255,255,255,.07)}
+.pagehead h2{font-size:25px;flex:1;min-width:140px}
+.crumb{font-size:13.5px;color:var(--muted);margin:-10px 0 16px}
+.section{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;margin-bottom:16px}
+.section p,.section li{color:#ded7ee;line-height:1.65;max-width:68ch}
+
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.cat{background:var(--panel);border-radius:var(--r-lg);padding:16px 14px;text-align:left;
+  box-shadow:0 4px 0 rgba(0,0,0,.35);transition:transform .1s,background .15s}
+.cat:hover{background:var(--panel-2)}
+.cat:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+.cat .ic{font-size:30px;line-height:1}
+.cat h3{font-size:18px;margin:8px 0 3px}
+.cat .sub{font-size:12.5px;color:var(--muted)}
+.cat .mini{display:flex;gap:5px;margin-top:10px}
+.cat .mini span{flex:1;height:6px;border-radius:6px;background:rgba(0,0,0,.35);overflow:hidden}
+.cat .mini i{display:block;height:100%}
+.cat .done{font-size:12.5px;color:var(--mint);margin-top:8px;font-weight:700}
+
+.diffcard{display:block;width:100%;text-align:left;border-radius:var(--r-lg);padding:18px 20px;margin-bottom:14px;
+  background:var(--panel);border-left:7px solid var(--dc);box-shadow:0 4px 0 rgba(0,0,0,.35);transition:transform .1s,background .15s}
+.diffcard:hover{background:var(--panel-2)}
+.diffcard:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+.diffcard h3{font-size:23px;color:var(--dc)}
+.diffcard .desc{color:var(--muted);font-size:14px;margin:6px 0 10px;line-height:1.5}
+.diffcard .meta{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:#ded7ee}
+.diffcard .cont{margin-top:12px;display:inline-block;background:var(--amber);color:#2b1a00;font-family:var(--display);
+  font-weight:600;padding:9px 16px;border-radius:999px;font-size:15px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:10px}
+.lvl{aspect-ratio:1;border-radius:var(--r-md);background:var(--panel);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;font-family:var(--display);font-size:18px;font-weight:600;
+  border:2px solid transparent;transition:transform .1s}
+.lvl small{font-size:11px;font-weight:400;opacity:.85}
+.lvl:hover{transform:translateY(-2px)}
+.lvl.done{background:rgba(74,222,158,.16);border-color:rgba(74,222,158,.5);color:var(--mint)}
+.lvl.next{background:var(--amber);color:#2b1a00;box-shadow:0 0 0 4px rgba(255,180,61,.22);animation:unlock .5s ease}
+@keyframes unlock{from{transform:scale(.8);box-shadow:0 0 0 0 rgba(255,180,61,0)}to{transform:none}}
+.lvl.locked{background:rgba(255,255,255,.04);color:#6f6796;cursor:not-allowed;border-color:var(--line)}
+.lvl.locked:hover{transform:none}
+
+.hud{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.hud .left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chip{background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:700}
+.chip.cat{color:var(--c)}
+.hearts{font-size:17px;letter-spacing:2px}
+.heart.gone{filter:grayscale(1);opacity:.3}
+.stage{display:flex;gap:18px;align-items:center;justify-content:center;flex-wrap:wrap;margin:4px 0}
+svg.man{width:180px;height:210px;flex:none}
+svg.man .part{opacity:0;transition:opacity .35s ease}
+svg.man .part.show{opacity:1}
+.clue{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:4px solid var(--amber);
+  border-radius:var(--r-md);padding:14px 16px;max-width:360px;line-height:1.55;font-size:15.5px;color:#ece6fb}
+.clue .cat2,.clue .extra{display:none;margin-top:9px;font-size:13.5px}
+.clue .cat2{color:var(--amber)} .clue .extra{color:var(--mint)}
+.word{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin:20px 0 12px}
+.wordpart{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.slot{width:32px;height:44px;border-radius:8px;background:rgba(255,255,255,.06);border-bottom:3px solid var(--muted);
+  display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:24px;font-weight:600}
+.slot.free{color:var(--amber);border-bottom-color:var(--amber)}
+.slot.hit{color:var(--mint);border-bottom-color:var(--mint);animation:pop .3s ease}
+.slot.miss{color:var(--rose);border-bottom-color:var(--rose)}
+@keyframes pop{0%{transform:scale(.6);opacity:.2}60%{transform:scale(1.15)}100%{transform:none}}
+.wrongs{text-align:center;font-size:14px;color:var(--muted);min-height:22px;margin-bottom:12px}
+.wrongs b{color:var(--rose);font-family:var(--display);font-size:17px;letter-spacing:5px}
+.keys{display:flex;flex-direction:column;gap:8px;align-items:center}
+.krow{display:flex;gap:6px;justify-content:center;width:100%}
+.key{flex:1 1 0;max-width:56px;min-width:0;height:50px;border-radius:var(--r-sm);background:var(--panel);
+  font-family:var(--display);font-size:19px;font-weight:600;box-shadow:0 3px 0 rgba(0,0,0,.4);transition:transform .07s}
+.key:hover:not([disabled]){background:var(--panel-2)}
+.key:active:not([disabled]){transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.4)}
+.key.good{background:rgba(74,222,158,.22);color:var(--mint);box-shadow:none}
+.key.bad{background:rgba(255,107,122,.18);color:var(--rose);box-shadow:none}
+.key.dropped{opacity:.25;box-shadow:none}
+.key[disabled]{cursor:default}
+.shake{animation:shake .32s}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+
+.veil{position:fixed;inset:0;background:rgba(8,5,25,.74);display:flex;align-items:center;justify-content:center;padding:18px;z-index:40;overflow:auto}
+.veil[hidden]{display:none}
+.card{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--r-lg);padding:26px 22px;
+  max-width:400px;width:100%;text-align:center;box-shadow:0 22px 60px rgba(0,0,0,.6);animation:rise .25s ease}
+@keyframes rise{from{transform:translateY(22px) scale(.96);opacity:0}to{transform:none;opacity:1}}
+.card h2{font-size:27px;margin-bottom:4px}
+.card .answer{font-family:var(--display);font-size:28px;letter-spacing:.06em;margin:10px 0 4px;color:var(--amber);word-break:break-word}
+.rows{margin:16px 0;text-align:left;display:flex;flex-direction:column;gap:7px}
+.rows div{display:flex;justify-content:space-between;gap:12px;font-size:15px;border-bottom:1px dashed var(--line);padding-bottom:6px}
+.rows div b{font-family:var(--display);white-space:nowrap}
+.card .stack{max-width:none}
+.hintlist{display:flex;flex-direction:column;gap:10px;text-align:left}
+.hintopt{padding:13px 15px;border-radius:var(--r-md);background:var(--panel);font-size:15px;font-weight:700}
+.hintopt small{display:block;font-weight:400;color:var(--muted);margin-top:3px;font-size:13px}
+.hintopt[disabled]{opacity:.4;cursor:not-allowed}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--panel-2);border:1px solid var(--line);
+  padding:11px 18px;border-radius:999px;font-weight:700;font-size:14px;z-index:50;animation:rise .2s ease}
+.toast[hidden]{display:none}
+.toast.good{color:var(--mint)} .toast.bad{color:var(--rose)}
+.howto li{margin-bottom:9px}
+@media (max-width:520px){
+  .slot{width:27px;height:39px;font-size:20px}
+  .key{height:46px;font-size:17px}
+  svg.man{width:142px;height:170px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:8px}
+  .cats{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
+  .totals{grid-template-columns:1fr 1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<section id="s-home" class="screen on">
+  <div class="hero">
+    <svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
+      <g stroke="#FFB43D" stroke-width="6" stroke-linecap="round" fill="none">
+        <path d="M14 90 H56"/><path d="M32 90 V14 H74"/><path d="M74 14 V30"/></g>
+      <circle cx="74" cy="42" r="11" fill="none" stroke="#F5F0E6" stroke-width="5"/>
+    </svg>
+    <h1 class="title">HANGMAN</h1>
+    <p class="tagline">Guess the word. Save your attempts.<br>18 categories, three difficulties, 2700 levels.</p>
+    <div class="stack">
+      <button class="btn primary" data-go="categories">Play game</button>
+      <button class="btn" data-go="howto">How to play</button>
+      <button class="btn ghost" data-go="settings">Settings</button>
+    </div>
+    <div class="totals">
+      <div class="tile"><b id="home-score">0</b><span>Total score</span></div>
+      <div class="tile"><b id="home-levels">0</b><span>Levels completed</span></div>
+      <div class="tile"><b id="home-cats">0</b><span>Categories started</span></div>
+    </div>
+    <div class="bar" style="max-width:460px;margin:12px auto 0"><i id="home-bar" style="width:0%"></i></div>
+    <p style="color:var(--muted);font-size:12.5px;margin-top:8px" id="home-pct">0% of 2700 levels</p>
+  </div>
+</section>
+
+<section id="s-categories" class="screen">
+  <div class="pagehead"><button class="back" data-go="home">Back</button><h2>Pick a category</h2></div>
+  <div class="cats" id="cat-grid"></div>
+</section>
+
+<section id="s-difficulty" class="screen">
+  <div class="pagehead"><button class="back" data-go="categories">Categories</button><h2 id="d-title">Fruits</h2></div>
+  <p class="crumb" id="d-crumb"></p>
+  <div id="diff-cards"></div>
+</section>
+
+<section id="s-levels" class="screen">
+  <div class="pagehead"><button class="back" data-go="difficulty">Difficulty</button><h2 id="lv-title">Fruits · Easy</h2></div>
+  <div class="section" style="padding:16px 20px">
+    <div style="display:flex;justify-content:space-between;font-size:14px;color:#ded7ee">
+      <span id="lv-prog">0 / 50 completed</span><span id="lv-score">Score 0</span></div>
+    <div class="bar"><i id="lv-bar" style="width:0%"></i></div>
+  </div>
+  <div class="grid" id="lv-grid"></div>
+</section>
+
+<section id="s-game" class="screen">
+  <div class="hud">
+    <div class="left">
+      <button class="back" data-go="levels">Levels</button>
+      <span class="chip cat" id="g-cat"></span>
+      <span class="chip" id="g-diff">Easy</span>
+      <span class="chip" id="g-level">Level 1</span>
+    </div>
+    <div class="left">
+      <span class="chip">Score <b id="g-score">0</b></span>
+      <button class="chip" id="g-hint">Hint <b id="g-hints">3</b></button>
+    </div>
+  </div>
+  <div class="hud" style="justify-content:center"><span class="hearts" id="g-hearts"></span></div>
+  <div class="stage">
+    <svg class="man" viewBox="0 0 200 230" role="img" aria-label="Hangman drawing">
+      <g stroke="#8d82c4" stroke-width="8" stroke-linecap="round" fill="none">
+        <path d="M20 215 H120"/><path d="M60 215 V20 H140"/><path d="M140 20 V46"/></g>
+      <g stroke="#F5F0E6" stroke-width="7" stroke-linecap="round" fill="none">
+        <circle class="part" data-p="1" cx="140" cy="68" r="22" stroke="#FF6B7A"/>
+        <path class="part" data-p="2" d="M140 90 V150"/>
+        <path class="part" data-p="3" d="M140 105 L112 130"/>
+        <path class="part" data-p="4" d="M140 105 L168 130"/>
+        <path class="part" data-p="5" d="M140 150 L114 190"/>
+        <path class="part" data-p="6" d="M140 150 L166 190"/></g>
+    </svg>
+    <div class="clue">
+      <div id="g-clue"></div>
+      <div class="cat2" id="g-cat2"></div>
+      <div class="extra" id="g-extra"></div>
+    </div>
+  </div>
+  <div class="word" id="g-word"></div>
+  <div class="wrongs" id="g-wrong"></div>
+  <div class="keys" id="g-keys"></div>
+</section>
+
+<section id="s-howto" class="screen">
+  <div class="pagehead"><button class="back" data-go="home">Back</button><h2>How to play</h2></div>
+  <div class="section howto">
+    <ol>
+      <li>Pick a category — fruits, animals, programming, whatever you fancy.</li>
+      <li>Pick a difficulty. Each one has its own 50 levels and its own saved progress.</li>
+      <li>Start at level 1, or tap continue to carry on where you stopped.</li>
+      <li>Read the clue. It always describes the hidden answer without giving it away.</li>
+      <li>Some letters are already filled in when the level opens. They are free: no attempts, no hints, no points lost.</li>
+      <li>Tap a letter, or type one on a physical keyboard, to guess it.</li>
+      <li>A correct letter fills every place it appears. A wrong one costs an attempt and draws another piece of the hangman.</li>
+      <li>Hints are limited and each costs 25 points, so keep them for when you are stuck.</li>
+      <li>Reveal every letter before your attempts run out. Spaces between words are filled in for you.</li>
+      <li>Finishing a level unlocks the next one. Completed levels can be replayed without losing progress.</li>
+      <li>Everything is saved on this device, so you can close the browser and come back.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="s-settings" class="screen">
+  <div class="pagehead"><button class="back" data-go="home">Back</button><h2>Settings</h2></div>
+  <div class="section">
+    <h3 style="font-size:19px;margin-bottom:10px">Your progress</h3>
+    <div class="rows" id="set-rows"></div>
+    <p style="font-size:13.5px;color:var(--muted)" id="set-empty"></p>
+  </div>
+  <div class="section">
+    <h3 style="font-size:19px;margin-bottom:8px">Reset all progress</h3>
+    <p style="margin-top:0">This clears every completed level and score in every category and difficulty on this device.</p>
+    <button class="btn danger" id="set-reset" style="max-width:260px">Reset all progress</button>
+  </div>
+</section>
+
+</div>
+<div class="veil" id="veil" hidden><div class="card" id="card"></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ============================================================
+   1. CATEGORY + WORD DATA  (data only — no game logic here)
+   ============================================================ */
+const CATS = [
+{id:"fruits",name:"Fruits",icon:"🍎",
+easy:[["APPLE","Red or green, and said to keep the doctor away."],["MANGO","A sweet golden fruit with one large flat stone inside."],["BANANA","A long yellow fruit you peel before eating."],["ORANGE","A round citrus fruit that shares its name with a colour."],["GRAPES","Small round fruit that grows in bunches on a vine."],["LEMON","A sour yellow citrus fruit squeezed into drinks."],["CHERRY","A tiny red fruit with a stone, often sitting on a cake."],["PEACH","A soft fuzzy fruit with orange flesh and a large stone."],["MELON","A big round fruit with sweet juicy flesh inside a thick rind."],["PEAR","A green fruit that is narrow at the top and wide at the bottom."]],
+medium:[["PINEAPPLE","A spiky tropical fruit with a crown of stiff leaves."],["POMEGRANATE","A red fruit packed with hundreds of juicy seeds."],["BLUEBERRY","A tiny dark berry often baked into muffins."],["APRICOT","A small orange fruit like a little peach, often dried."],["PAPAYA","A tropical fruit with orange flesh and black seeds in the middle."],["COCONUT","A hard brown shell holding white flesh and sweet water."],["RASPBERRY","A soft red berry made of many tiny bumps."],["WATERMELON","A huge green fruit with pink flesh and black seeds."]],
+hard:[["DRAGON FRUIT","A pink scaly cactus fruit with speckled white flesh."],["PERSIMMON","An orange autumn fruit that must be very ripe to taste sweet."],["GOOSEBERRY","A small tart green berry used in pies and jams."],["CLEMENTINE","A small easy-to-peel citrus fruit with almost no seeds."],["PASSION FRUIT","A wrinkled purple fruit full of tangy seedy pulp."],["MANGOSTEEN","A purple tropical fruit with sweet white segments inside."],["ELDERBERRY","A dark berry from a hedgerow shrub, used in cordials."]]},
+
+{id:"animals",name:"Animals",icon:"🐯",
+easy:[["LION","The big cat known as the king of the jungle."],["TIGER","A large striped cat that hunts alone."],["ELEPHANT","The biggest land animal, with a long trunk."],["MONKEY","A playful animal that swings from branch to branch."],["RABBIT","A small hopping animal with long ears."],["HORSE","A strong animal people ride and race."],["CAMEL","A desert animal with humps on its back."],["GIRAFFE","The tallest animal, with a very long neck."],["DOLPHIN","A clever sea mammal that leaps from the waves."],["PENGUIN","A black and white bird that swims but cannot fly."]],
+medium:[["CHAMELEON","A lizard that changes colour to match its surroundings."],["KANGAROO","An Australian animal that hops and carries young in a pouch."],["CROCODILE","An armoured river reptile with only its eyes showing above water."],["OCTOPUS","A soft sea creature with eight arms."],["PORCUPINE","A rodent covered in sharp defensive quills."],["FLAMINGO","A tall pink bird that stands on one leg."],["LEOPARD","A spotted big cat that drags its meals up into trees."],["WALRUS","A heavy Arctic sea mammal with long tusks."]],
+hard:[["ORANGUTAN","A red-haired ape from the rainforests of Borneo."],["ARMADILLO","A small animal wearing bony armour that can roll into a ball."],["PLATYPUS","An egg-laying mammal with a duck-like bill."],["CHINCHILLA","A soft-furred rodent from the Andes mountains."],["WILDEBEEST","A horned African grazer famous for its huge migration."],["KOMODO DRAGON","The largest lizard alive, found on a few Indonesian islands."],["PANGOLIN","A scaly ant-eating mammal that curls into a ball."]]},
+
+{id:"countries",name:"Countries",icon:"🌍",
+easy:[["INDIA","A South Asian country famous for the Taj Mahal."],["JAPAN","An island nation of cherry blossoms and bullet trains."],["CANADA","A huge northern country with a maple leaf on its flag."],["BRAZIL","The largest South American country, home of the Amazon."],["FRANCE","A European country known for the Eiffel Tower."],["EGYPT","A North African country with ancient pyramids."],["ITALY","A boot-shaped country famous for pizza and pasta."],["SPAIN","A European country known for flamenco and paella."],["CHINA","The country with the Great Wall and the most people in Asia."],["KENYA","An East African country famous for safaris and runners."]],
+medium:[["AUSTRALIA","A country that is also a continent, home of the kangaroo."],["THAILAND","A Southeast Asian kingdom of temples and street food."],["PORTUGAL","A country on the western edge of Europe, facing the Atlantic."],["ARGENTINA","A South American country famous for tango and beef."],["MOROCCO","A North African country of markets, deserts and blue towns."],["VIETNAM","A long Southeast Asian country shaped like a letter S."],["NORWAY","A Nordic country of deep fjords and midnight sun."],["NEW ZEALAND","Two main islands in the Pacific, famous for sheep and rugby."]],
+hard:[["KAZAKHSTAN","The largest landlocked country in the world."],["MADAGASCAR","A huge island nation off Africa, home of the lemur."],["SWITZERLAND","An Alpine country known for neutrality, banks and chocolate."],["LUXEMBOURG","A tiny wealthy country between Belgium, France and Germany."],["AZERBAIJAN","A country on the Caspian Sea, known as the land of fire."],["SOUTH KOREA","An Asian country famous for technology and pop music."],["MAURITANIA","A West African country that is mostly Sahara desert."]]},
+{id:"programming",name:"Programming",icon:"💻",
+easy:[["CODE","The instructions a programmer writes for a computer."],["LOOP","A block that repeats until a condition is met."],["ARRAY","An ordered list of values stored under one name."],["PYTHON","A popular language named after a snake, known for readable code."],["STRING","A piece of text stored in a program."],["JAVA","A language whose programs run on a virtual machine, named after coffee."],["INDEX","The position number of an item in a list."],["CLASS","A blueprint from which objects are created."],["DEBUG","To hunt down and remove faults in a program."],["SYNTAX","The grammar rules a programming language expects."]],
+medium:[["FUNCTION","A reusable block of code that performs one task."],["VARIABLE","A named box that holds a value you can change."],["DATABASE","An organised store where an application keeps its data."],["JAVASCRIPT","The language that makes web pages interactive in the browser."],["COMPILER","A tool that turns source code into machine instructions."],["RECURSION","When a function solves a problem by calling itself."],["FRAMEWORK","A ready-made structure you build an application on top of."],["ALGORITHM","A step-by-step procedure for solving a problem."]],
+hard:[["POLYMORPHISM","When one interface works with many different types."],["ENCAPSULATION","Hiding an object's internal data behind its methods."],["MIDDLEWARE","Code that sits between a request and the final handler."],["IMMUTABILITY","The property of a value that can never be changed after creation."],["ASYNCHRONOUS","Work that continues while other code keeps running."],["DEPENDENCY INJECTION","Supplying a component with what it needs instead of letting it build it."],["GARBAGE COLLECTION","Automatic reclaiming of memory no longer in use."]]},
+
+{id:"general",name:"General Knowledge",icon:"🧠",
+easy:[["CONTINENT","One of the seven great landmasses of the world."],["OCEAN","A vast body of salt water covering much of the planet."],["DESERT","A very dry region where little rain ever falls."],["CAPITAL","The city where a country's government sits."],["PLANET","A large body that orbits a star, like ours."],["FLAG","A coloured cloth that stands for a country."],["ISLAND","Land with water on every side."],["COMPASS","A tool whose needle always points north."],["MOUNTAIN","A very high piece of land with a peak."],["ALPHABET","The full set of letters used to write a language."]],
+medium:[["EQUATOR","The imaginary line around the middle of the Earth."],["DEMOCRACY","A system where citizens choose their government by voting."],["TELESCOPE","An instrument that brings distant stars into view."],["VOLCANO","A mountain that can erupt with molten rock."],["PARLIAMENT","The body of elected members that makes a country's laws."],["GLACIER","A slow-moving river of ice in the mountains."],["TIME ZONE","A region where every clock shows the same hour."],["GRAVITY","The force that keeps everything pressed to the ground."]],
+hard:[["ARCHIPELAGO","A scattered chain or cluster of islands."],["HEMISPHERE","One half of the globe, north or south of the equator."],["RENAISSANCE","The European rebirth of art and learning after the Middle Ages."],["SUFFRAGE","The right to vote in public elections."],["MONSOON","A seasonal wind that brings months of heavy rain."],["CARTOGRAPHY","The craft of drawing maps."],["ANTIQUITY","The distant ancient past, before the Middle Ages."]]},
+
+{id:"movies",name:"Movies",icon:"🎬",
+easy:[["ACTOR","The person who performs a role on screen."],["SCRIPT","The written text of everything said in a film."],["CAMERA","The device that records every shot."],["SCENE","A single continuous part of a film's story."],["TICKET","You buy this to get into the cinema."],["POPCORN","The snack everyone eats while watching a film."],["CINEMA","The building where films are shown on a big screen."],["TRAILER","A short preview shown before a film is released."],["COMEDY","A film genre made to get you laughing."],["VILLAIN","The character working against the hero."]],
+medium:[["DIRECTOR","The person who decides how a film is shot and performed."],["SOUNDTRACK","All the music that plays through a film."],["ANIMATION","A film made from drawings or computer models, frame by frame."],["SCREENPLAY","The full script with scenes, action and dialogue."],["PREMIERE","The very first public showing of a film."],["STUNT DOUBLE","The performer who takes the dangerous falls for an actor."],["SEQUEL","A film that continues the story of an earlier one."],["BOX OFFICE","The total money a film takes from ticket sales."]],
+hard:[["CINEMATOGRAPHY","The art of lighting and photographing a film."],["PROTAGONIST","The central character whose story we follow."],["MONTAGE","A quick sequence of shots that compresses time."],["SCREENWRITER","The person who writes the script."],["DOCUMENTARY","A film about real people and real events."],["BLOCKBUSTER","A film that fills cinemas and makes enormous money."],["CHOREOGRAPHY","The planned arrangement of dance or fight movement."]]},
+{id:"sports",name:"Sports",icon:"⚽",
+easy:[["FOOTBALL","Two teams of eleven kick a ball toward a goal."],["CRICKET","A bat and ball game played with stumps and overs."],["TENNIS","Played with rackets over a net, scored in fifteens."],["HOCKEY","Teams use curved sticks to drive a ball or puck into a net."],["BOXING","Two opponents trade punches inside a roped ring."],["RUNNING","The simplest race of all, on a track or a road."],["SWIMMING","A race through lanes of water."],["GOLF","You try to hit a small ball into a hole in as few shots as possible."],["CHESS","A quiet battle of kings, knights and bishops on 64 squares."],["RUGBY","An oval ball is carried and passed backwards toward the try line."]],
+medium:[["BASKETBALL","Players throw a ball through a hoop ten feet high."],["BADMINTON","A racket game played with a feathered shuttlecock."],["MARATHON","A running race of just over forty-two kilometres."],["OLYMPICS","The world's biggest sporting festival, held every four years."],["VOLLEYBALL","Teams keep a ball in the air over a high net."],["ARCHERY","The sport of shooting arrows at a target."],["WRESTLING","Two athletes grapple to pin each other to the mat."],["PENALTY KICK","A free shot from twelve yards with only the keeper to beat."]],
+hard:[["STEEPLECHASE","A long track race over barriers and a water jump."],["DECATHLON","Ten track and field events contested over two days."],["GYMNASTICS","Routines of balance and tumbling on beam, bars and floor."],["EQUESTRIAN","Any Olympic sport performed on horseback."],["WEIGHTLIFTING","Snatch and clean and jerk decide the winner here."],["TRIATHLON","Swim, cycle and run, one straight after another."],["SYNCHRONISED SWIMMING","A team performs a routine in the pool in perfect time."]]},
+
+{id:"food",name:"Food",icon:"🍔",
+easy:[["PIZZA","A round base with tomato and melted cheese on top."],["BURGER","A patty served inside a soft round bun."],["PASTA","An Italian staple boiled in water, served with sauce."],["SOUP","A hot liquid meal eaten with a spoon."],["BREAD","Baked from flour and yeast, sliced for sandwiches."],["CHEESE","Made from milk, it melts beautifully on toast."],["RICE","Small white grains, the staple of half the world."],["NOODLES","Long thin strands slurped from a bowl."],["SALAD","A cold mix of raw vegetables and leaves."],["CAKE","Baked, iced, and topped with candles on birthdays."]],
+medium:[["SANDWICH","A filling placed between two slices of bread."],["CHOCOLATE","A sweet brown treat made from cocoa beans."],["PANCAKE","A flat batter round cooked in a pan and flipped."],["BIRYANI","Spiced rice layered and cooked with meat or vegetables."],["OMELETTE","Beaten eggs cooked flat and folded over a filling."],["DUMPLING","A small parcel of dough steamed or fried with a filling."],["CROISSANT","A flaky buttery crescent eaten at breakfast."],["ICE CREAM","A cold sweet dessert served in scoops or cones."]],
+hard:[["BRUSCHETTA","Toasted bread rubbed with garlic and piled with tomato."],["RATATOUILLE","A slow-cooked French dish of summer vegetables."],["QUESADILLA","A tortilla folded over melted cheese and grilled."],["STROGANOFF","Strips of beef in a sour cream sauce, served over rice."],["GUACAMOLE","A green dip mashed from avocado, lime and onion."],["TIRAMISU","An Italian dessert layered with coffee-soaked sponge."],["SHEPHERDS PIE","Minced meat under a crust of mashed potato."]]},
+
+{id:"vehicles",name:"Vehicles",icon:"🚗",
+easy:[["CAR","Four wheels, a steering wheel and a family inside."],["BUS","A long vehicle that carries many passengers along a route."],["TRUCK","A large vehicle built to haul heavy loads."],["BICYCLE","Two wheels you move by pedalling."],["TRAIN","It runs on rails between stations."],["BOAT","A small craft that carries you across water."],["SCOOTER","A light two-wheeler with a step-through frame."],["TRACTOR","A heavy machine that pulls ploughs across a field."],["TAXI","You wave it down and pay by the meter."],["VAN","A boxy vehicle used for deliveries."]],
+medium:[["MOTORCYCLE","A powerful two-wheeler with an engine."],["HELICOPTER","Spinning blades let it hover in one place."],["AMBULANCE","It races to emergencies with a siren wailing."],["SUBMARINE","A vessel built to travel deep beneath the waves."],["AEROPLANE","Fixed wings carry it and its passengers through the sky."],["BULLDOZER","A tracked machine with a wide blade for pushing earth."],["FIRE ENGINE","A red vehicle that rushes toward a burning building."],["FERRY","A boat that carries cars and people on a set crossing."]],
+hard:[["HOVERCRAFT","It rides over land and water on a cushion of air."],["LOCOMOTIVE","The engine unit that pulls a train's carriages."],["CATAMARAN","A fast boat balanced on two parallel hulls."],["SNOWMOBILE","A machine on skis and a track for crossing deep snow."],["FUNICULAR","A cable railway where two cars balance each other up a slope."],["RICKSHAW","A small passenger vehicle common in Asian city streets."],["ARTICULATED LORRY","A cab and trailer joined by a pivot, bending as it turns."]]},
+{id:"cities",name:"Cities",icon:"🌆",
+easy:[["LONDON","A capital on the Thames, with a famous clock tower."],["PARIS","A capital of cafés, the Louvre and an iron tower."],["TOKYO","Japan's huge capital, busiest crossing in the world."],["DELHI","India's capital, home of the Red Fort."],["DUBAI","A Gulf city of skyscrapers built beside the desert."],["ROME","The eternal city, with a Colosseum at its heart."],["CAIRO","Egypt's capital, beside the Nile and the pyramids."],["SYDNEY","An Australian harbour city with a shell-shaped opera house."],["MUMBAI","India's financial capital, home of its film industry."],["BERLIN","Germany's capital, once divided by a wall."]],
+medium:[["BENGALURU","India's technology capital, known for its gardens and startups."],["NEW YORK","The city of yellow cabs, Broadway and Central Park."],["SINGAPORE","A green island city-state at the tip of Malaysia."],["BARCELONA","A Spanish coastal city shaped by the architect Gaudí."],["TORONTO","Canada's largest city, beside Lake Ontario."],["ISTANBUL","The city that stands on two continents at once."],["AMSTERDAM","A Dutch city of canals, bridges and bicycles."],["CAPE TOWN","A South African city under a flat-topped mountain."]],
+hard:[["COPENHAGEN","A Danish capital of bicycles and a little mermaid statue."],["JOHANNESBURG","South Africa's biggest city, built on gold mining."],["RIO DE JANEIRO","A Brazilian city of carnival, beaches and a hilltop statue."],["KUALA LUMPUR","A Malaysian capital famous for its twin towers."],["REYKJAVIK","The world's northernmost capital, heated by geothermal water."],["BUENOS AIRES","An Argentine capital where tango was born."],["SAINT PETERSBURG","A Russian city of palaces built on a marshy delta."]]},
+
+{id:"science",name:"Science",icon:"🔬",
+easy:[["GRAVITY","The force that pulls everything toward the ground."],["PLANET","A large body that circles a star."],["OXYGEN","The gas in the air that every breath depends on."],["ATOM","The smallest unit of an element."],["ENERGY","What is needed to do any kind of work."],["MAGNET","A metal that pulls iron toward it."],["ORBIT","The curved path one body takes around another."],["CELL","The basic building block of every living thing."],["FORCE","A push or a pull that changes how something moves."],["LIGHT","What travels fastest of all and lets us see."]],
+medium:[["ELECTRICITY","The flow of charge that powers our homes."],["MOLECULE","Two or more atoms bonded together."],["EVOLUTION","The slow change of species across generations."],["BACTERIA","Single-celled organisms, some helpful and some harmful."],["FRICTION","The force that resists one surface sliding over another."],["ECLIPSE","When one body passes into the shadow of another."],["VACCINE","A preparation that trains the body to fight a disease."],["PERIODIC TABLE","The grid that arranges every chemical element."]],
+hard:[["PHOTOSYNTHESIS","The process by which plants turn sunlight into food."],["THERMODYNAMICS","The physics of heat, work and energy transfer."],["ELECTROMAGNETISM","The single force behind both magnets and electric charge."],["MITOCHONDRIA","The structures that release energy inside a cell."],["CENTRIFUGE","A spinning machine that separates liquids by density."],["RADIOACTIVITY","The spontaneous breakdown of unstable atomic nuclei."],["CHROMOSOME","A thread of DNA carrying genes inside the nucleus."]]},
+
+{id:"education",name:"Education",icon:"📚",
+easy:[["SCHOOL","Children go here every morning to learn."],["TEACHER","The person who stands in front of the class."],["PENCIL","You write with it and rub out mistakes."],["EXAM","A test that decides your grade."],["HOMEWORK","The work you take home after lessons."],["LESSON","One period of teaching on a single subject."],["GRAMMAR","The rules that decide how sentences are built."],["LIBRARY","A quiet place full of books to borrow."],["UNIFORM","The clothes every pupil in a school wears."],["NOTEBOOK","Where you keep your written notes."]],
+medium:[["MATHEMATICS","The subject of numbers, shapes and proof."],["CHEMISTRY","The science of substances and how they react."],["LITERATURE","The study of novels, plays and poetry."],["GEOGRAPHY","The study of the Earth's places and people."],["DIPLOMA","The certificate awarded at the end of a course."],["SEMESTER","One half of an academic year."],["CURRICULUM","The full plan of what a course will teach."],["COMPUTER SCIENCE","The subject of algorithms, data and machines that compute."]],
+hard:[["TRIGONOMETRY","The branch of maths dealing with triangles and angles."],["PHILOSOPHY","The study of knowledge, truth and how we should live."],["DISSERTATION","A long piece of original research written for a degree."],["LINGUISTICS","The scientific study of how language works."],["SCHOLARSHIP","An award that pays for a student's studies."],["PEDAGOGY","The theory and method of teaching itself."],["VALEDICTORIAN","The top-ranked student who speaks at graduation."]]},
+{id:"music",name:"Music",icon:"🎵",
+easy:[["GUITAR","Six strings you strum or pluck."],["PIANO","Eighty-eight black and white keys."],["DRUMS","You hit these with sticks to keep the beat."],["FLUTE","A slim wind instrument you blow across, not into."],["VIOLIN","A small string instrument played with a bow."],["SINGER","The person who performs the words of a song."],["LYRICS","The words written to be sung."],["MELODY","The tune you hum after the song ends."],["BAND","A small group of musicians who play together."],["CHORUS","The part of a song that comes back again and again."]],
+medium:[["SAXOPHONE","A curved brass instrument at the heart of jazz."],["ORCHESTRA","A large group of musicians led by a conductor."],["HARMONY","Notes sounded together to support the tune."],["KEYBOARD","An electronic instrument with piano-style keys."],["CONCERT","A live performance in front of an audience."],["TRUMPET","A bright brass instrument with three valves."],["RHYTHM","The pattern of beats that drives a piece along."],["TAMBOURINE","A small hand drum ringed with jingling discs."]],
+hard:[["CRESCENDO","A gradual growth in loudness."],["IMPROVISATION","Music invented on the spot, without a score."],["PHILHARMONIC","A word in the name of many great symphony orchestras."],["ARPEGGIO","The notes of a chord played one after another."],["METRONOME","A device that ticks out a steady tempo."],["COMPOSITION","An original piece of written music."],["SYNCOPATION","Accenting the off-beats to unsettle the rhythm."]]},
+
+{id:"technology",name:"Technology",icon:"👨‍💻",
+easy:[["COMPUTER","A machine that runs programs and stores your files."],["INTERNET","The worldwide network that connects everything."],["MOUSE","You move it to steer the pointer on screen."],["SCREEN","The surface that displays what a device is doing."],["PHONE","You call, message and browse on it."],["EMAIL","Messages sent to an address with an at sign in it."],["BATTERY","It stores the charge that keeps a device alive."],["PRINTER","It puts what is on screen onto paper."],["PASSWORD","The secret text that unlocks your account."],["ROBOT","A machine built to carry out tasks on its own."]],
+medium:[["SMARTPHONE","A pocket computer that also makes calls."],["SOFTWARE","The programs a device runs, as opposed to its parts."],["BLUETOOTH","The short-range wireless link between nearby devices."],["HARDWARE","The physical parts you can actually touch."],["ROBOTICS","The field of designing and building machines that act."],["FIREWALL","A barrier that filters traffic entering a network."],["TOUCHSCREEN","A display you control with your fingers."],["CLOUD STORAGE","Files kept on distant servers rather than your own disk."]],
+hard:[["ARTIFICIAL INTELLIGENCE","Machines performing tasks that used to need human thought."],["CYBERSECURITY","The practice of defending systems against attack."],["BLOCKCHAIN","A shared ledger where records are chained and hard to alter."],["VIRTUALISATION","Running several simulated machines on one real one."],["QUANTUM COMPUTING","Computation that uses superposition rather than plain bits."],["CRYPTOGRAPHY","The science of keeping messages unreadable to others."],["SEMICONDUCTOR","The material that chips are etched from."]]},
+
+{id:"history",name:"History",icon:"🏛️",
+easy:[["KING","A man who rules a kingdom."],["QUEEN","A woman who rules a kingdom."],["CASTLE","A fortified stone home with walls and towers."],["KNIGHT","An armoured warrior who served a lord on horseback."],["EMPIRE","Many lands ruled by one power."],["CROWN","The jewelled headpiece of a ruler."],["TEMPLE","An ancient building raised for worship."],["TOMB","The place where the dead were laid to rest."],["SWORD","The bladed weapon carried for centuries."],["THRONE","The ceremonial seat of a ruler."]],
+medium:[["PYRAMID","An Egyptian tomb with four triangular sides."],["PHARAOH","The title of an ancient Egyptian ruler."],["REVOLUTION","A sudden overthrow of the existing order."],["COLOSSEUM","The great Roman arena of gladiator contests."],["DYNASTY","A line of rulers from the same family."],["CRUSADES","Medieval religious wars fought over the Holy Land."],["MONARCHY","Rule by a king or queen."],["GREAT WALL","The vast defensive barrier stretching across northern China."]],
+hard:[["MESOPOTAMIA","The land between two rivers where cities began."],["HIEROGLYPHICS","Picture writing carved on Egyptian tomb walls."],["CONSTANTINOPLE","The old name of the city now called Istanbul."],["ARISTOCRACY","Rule by a small privileged noble class."],["ARCHAEOLOGY","Digging up the past to study how people lived."],["MAGNA CARTA","The 1215 charter that limited an English king's power."],["INDUSTRIAL REVOLUTION","The age when machines and factories transformed work."]]},
+{id:"nature",name:"Nature",icon:"🌿",
+easy:[["RIVER","Running water that travels toward the sea."],["TREE","A tall plant with a trunk and branches."],["FLOWER","The colourful part of a plant that attracts bees."],["MOUNTAIN","A very high piece of land with a peak."],["RAIN","Water falling from the clouds."],["FOREST","A large area thick with trees."],["BEACH","Sand where the land meets the sea."],["CLOUD","Floating white shapes that carry the rain."],["LEAF","The flat green part of a plant that catches sunlight."],["WIND","Moving air you feel but cannot see."]],
+medium:[["WATERFALL","Where a river drops suddenly over a cliff."],["VOLCANO","A mountain that erupts with molten rock."],["RAINBOW","A coloured arc that appears after a shower."],["DESERT","A region so dry that almost nothing grows."],["HURRICANE","A huge spinning storm with a calm eye."],["MEADOW","An open field of grass and wildflowers."],["GLACIER","A slow river of ice grinding down a valley."],["CORAL REEF","An underwater ridge built by tiny living animals."]],
+hard:[["ECOSYSTEM","A community of living things and the place they share."],["PRECIPITATION","Any water that falls from the sky, in all its forms."],["BIODIVERSITY","The variety of life found in one place."],["SEDIMENT","Material that settles at the bottom of water."],["PERMAFROST","Ground in the far north that stays frozen all year."],["ESTUARY","Where a river's fresh water meets the tide."],["DECIDUOUS","Describing trees that drop their leaves each autumn."]]},
+
+{id:"games",name:"Games",icon:"🎮",
+easy:[["CHESS","A quiet battle fought on sixty-four squares."],["PUZZLE","Pieces or clues you fit together to solve."],["DICE","Little cubes you roll for a number."],["LEVEL","One stage of a game you must clear."],["PLAYER","The person holding the controller."],["SCORE","The number that says how well you did."],["CARDS","A deck of fifty-two used for hundreds of games."],["MAZE","A twisting set of paths you must escape."],["QUEST","A task or mission a game sends you on."],["LUDO","A board game of tokens racing home by dice."]],
+medium:[["JOYSTICK","A controller you push in any direction."],["CHECKPOINT","The place a game sends you back to after failing."],["MULTIPLAYER","A mode where several people play together."],["STRATEGY","A game genre about planning rather than reflexes."],["INVENTORY","The list of items your character is carrying."],["LEADERBOARD","The ranked table of the best scores."],["POWER UP","An item that briefly makes your character stronger."],["SPEEDRUN","An attempt to finish a game as fast as possible."]],
+hard:[["PROCEDURAL GENERATION","Building levels with rules and randomness instead of by hand."],["MATCHMAKING","Pairing players of similar skill for a fair game."],["ACHIEVEMENT","A badge unlocked for doing something specific in a game."],["SIMULATION","A genre that models a real activity in detail."],["PLATFORMER","A genre built on jumping between ledges."],["RESPAWN","To reappear in play after being defeated."],["MICROTRANSACTION","A very small in-game purchase."]]},
+
+{id:"books",name:"Books",icon:"📖",
+easy:[["NOVEL","A long made-up story told in prose."],["PAGE","One sheet you turn as you read."],["AUTHOR","The person who wrote the book."],["STORY","The sequence of events a book tells."],["POEM","Writing arranged in lines, often with rhythm."],["CHAPTER","One numbered section of a longer book."],["COVER","The outside of a book, with the title on it."],["DIARY","A private book where you record each day."],["FABLE","A short tale with talking animals and a moral."],["SHELF","Where books stand in rows waiting to be read."]],
+medium:[["PARAGRAPH","A block of sentences on one idea."],["BIOGRAPHY","The story of a real person's life, written by someone else."],["PUBLISHER","The company that prints and sells an author's work."],["PAPERBACK","A cheaper edition with a soft bendable cover."],["MYSTERY","A genre built around a puzzle and its solution."],["ANTHOLOGY","A collection of works by different writers in one volume."],["NARRATOR","The voice telling the story to the reader."],["PLOT TWIST","A sudden turn that overturns what you assumed."]],
+hard:[["METAPHOR","Describing one thing as if it truly were another."],["ALLEGORY","A story whose surface hides a second meaning."],["MANUSCRIPT","An author's text before it is ever printed."],["BIBLIOGRAPHY","The list of sources given at the end of a work."],["FORESHADOWING","Early hints that prepare the reader for what comes."],["EPILOGUE","The closing section that tells what happened afterwards."],["AUTOBIOGRAPHY","The story of a life, written by the person who lived it."]]}
+];
+
+
+/* ============================================================
+   2. DIFFICULTY CONFIG
+   ============================================================ */
+const CFG = {
+  easy:  {label:"Easy",   colour:"#4ADE9E", attempts:8, hints:3, base:100, reveal:[.20,.30], perAttempt:10,
+          blurb:"Short, everyday words with plenty of attempts and hints."},
+  medium:{label:"Medium", colour:"#FFB43D", attempts:6, hints:2, base:200, reveal:[.10,.20], perAttempt:15,
+          blurb:"Longer vocabulary, fewer attempts and hints, better rewards."},
+  hard:  {label:"Hard",   colour:"#FF6B7A", attempts:5, hints:1, base:300, reveal:[.05,.15], perAttempt:20,
+          blurb:"Uncommon and demanding answers, one hint only, top scores."}
+};
+const DIFFS = ["easy","medium","hard"];
+const PER = 50;
+const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const TOTAL_LEVELS = CATS.length * DIFFS.length * PER;
+const catById = id => CATS.find(c=>c.id===id);
+
+/* ============================================================
+   3. LEVEL BUILDER
+   Each category+difficulty has a word bank. Levels 1..50 are laid
+   out by a seeded shuffle of that bank so level N always gives the
+   same word, and the bank is re-shuffled for each pass so repeats
+   never land next to each other. Add words to the bank and the
+   levels rebuild themselves — no other code changes.
+   ============================================================ */
+function seeded(seed){                       // small deterministic PRNG
+  let s = 0; for(const ch of seed) s = (s*31 + ch.charCodeAt(0)) >>> 0;
+  return function(){ s = (s*1664525 + 1013904223) >>> 0; return s / 4294967296; };
+}
+function levelPlan(catId, diff){
+  const bank = catById(catId)[diff];
+  const rnd = seeded(catId + ":" + diff);
+  const out = [];
+  let last = null;
+  while(out.length < PER){
+    const pass = bank.slice();
+    for(let i=pass.length-1;i>0;i--){ const j = Math.floor(rnd()*(i+1)); [pass[i],pass[j]]=[pass[j],pass[i]]; }
+    if(pass.length>1 && last && pass[0][0]===last) [pass[0],pass[1]]=[pass[1],pass[0]];
+    for(const w of pass){ if(out.length<PER){ out.push(w); last = w[0]; } }
+  }
+  return out;
+}
+const planCache = {};
+function levelData(catId, diff, n){
+  const key = catId+":"+diff;
+  if(!planCache[key]) planCache[key] = levelPlan(catId, diff);
+  const e = planCache[key][n-1];
+  return {category:catId, categoryName:catById(catId).name, difficulty:diff, level:n,
+          word:e[0], clue:e[1], additionalHint:e[2]||null};
+}
+
+/* ============================================================
+   4. PROGRESS STORAGE  —  key is CATEGORY + DIFFICULTY
+   ============================================================ */
+const KEY = "hangman.categories.v1";
+let save = load();
+
+function emptySave(){ return {cats:{}}; }
+function slot(catId, diff){
+  if(!save.cats[catId]) save.cats[catId] = {};
+  if(!save.cats[catId][diff]) save.cats[catId][diff] = {completedLevel:0, score:0};
+  return save.cats[catId][diff];
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return emptySave();
+    const d = JSON.parse(raw), out = emptySave();
+    CATS.forEach(c=>DIFFS.forEach(df=>{
+      const s = d && d.cats && d.cats[c.id] && d.cats[c.id][df];
+      if(s){
+        out.cats[c.id] = out.cats[c.id] || {};
+        out.cats[c.id][df] = {
+          completedLevel: Math.min(PER, Math.max(0, parseInt(s.completedLevel)||0)),
+          score: Math.max(0, parseInt(s.score)||0)
+        };
+      }
+    }));
+    return out;
+  }catch(e){ return emptySave(); }
+}
+function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(save)); }catch(e){} }
+const nextLevel = (c,d) => Math.min(PER, slot(c,d).completedLevel + 1);
+const totalScore = () => CATS.reduce((s,c)=>s+DIFFS.reduce((t,d)=>t+slot(c.id,d).score,0),0);
+const totalDone  = () => CATS.reduce((s,c)=>s+DIFFS.reduce((t,d)=>t+slot(c.id,d).completedLevel,0),0);
+const catDone    = id => DIFFS.reduce((t,d)=>t+slot(id,d).completedLevel,0);
+
+/* ============================================================
+   5. BLANK + RANDOM REVEAL GENERATORS  (work on any answer)
+   ============================================================ */
+function generateBlanks(answer){
+  return answer.toUpperCase().split("").map(ch => ({ch, space: ch===" ", shown: ch===" ", free:false}));
+}
+function generateRandomRevealedLetters(slots, diff){
+  const idx = slots.map((s,i)=>s.space?-1:i).filter(i=>i>=0);
+  const letters = idx.length;
+  const [lo,hi] = CFG[diff].reveal;
+  let n = Math.max(1, Math.round(letters * (lo + Math.random()*(hi-lo))));
+  n = Math.min(n, Math.max(1, letters - 2));            // never reveal the whole answer
+  const pool = idx.slice(), picked = [];
+  while(picked.length < n && pool.length) picked.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+  picked.forEach(i=>{ slots[i].shown = true; slots[i].free = true; });
+  return picked;
+}
+
+/* ============================================================
+   6. GAME STATE
+   ============================================================ */
+let G = null;
+const $ = s => document.querySelector(s);
+
+function startLevel(catId, diff, n){
+  const L = levelData(catId, diff, n);
+  const slots = generateBlanks(L.word);
+  generateRandomRevealedLetters(slots, diff);
+  G = { catId, diff, n, L, slots,
+        max:CFG[diff].attempts, left:CFG[diff].attempts,
+        hints:CFG[diff].hints, hintsUsed:0,
+        guessed:new Set(), wrong:[], correct:0, dropped:new Set(),
+        start:Date.now(), over:false };
+  document.documentElement.style.setProperty("--c", CFG[diff].colour);
+  $("#g-cat").textContent = catById(catId).icon + " " + L.categoryName;
+  $("#g-diff").textContent = CFG[diff].label;
+  $("#g-diff").style.color = CFG[diff].colour;
+  $("#g-level").textContent = "Level " + n;
+  $("#g-clue").textContent = L.clue;
+  $("#g-cat2").style.display = "none"; $("#g-extra").style.display = "none";
+  renderKeys(); renderWord(); renderHUD(); drawMan();
+  show("game");
+}
+
+/* ============================================================
+   7. RENDERING
+   ============================================================ */
+function renderWord(){
+  const host = $("#g-word"); host.innerHTML = "";
+  let part = document.createElement("div"); part.className = "wordpart";
+  G.slots.forEach(s=>{
+    if(s.space){ host.appendChild(part); part = document.createElement("div"); part.className="wordpart"; return; }
+    const el = document.createElement("div");
+    el.className = "slot" + (s.missed ? " miss" : s.free ? " free" : s.shown ? " hit" : "");
+    el.textContent = s.shown ? s.ch : "";
+    if(!s.shown) el.setAttribute("aria-label","blank letter");
+    part.appendChild(el);
+  });
+  host.appendChild(part);
+}
+function renderHUD(){
+  $("#g-score").textContent = totalScore();
+  $("#g-hints").textContent = G.hints;
+  $("#g-hint").disabled = G.hints <= 0 || G.over;
+  let h = "";
+  for(let i=0;i<G.max;i++) h += '<span class="heart'+(i<G.left?'':' gone')+'">♥</span>';
+  $("#g-hearts").innerHTML = h + ' <span style="font-size:13px;color:var(--muted);letter-spacing:0">'+G.left+' of '+G.max+' attempts left</span>';
+  $("#g-wrong").innerHTML = G.wrong.length ? 'Wrong letters <b>'+G.wrong.join(" ")+'</b>' : 'No wrong letters yet';
+}
+function renderKeys(){
+  const rows = ["ABCDEFG","HIJKLMN","OPQRSTU","VWXYZ"];
+  const host = $("#g-keys"); host.innerHTML = "";
+  rows.forEach(r=>{
+    const div = document.createElement("div"); div.className = "krow";
+    r.split("").forEach(ch=>{
+      const b = document.createElement("button");
+      b.className = "key"; b.textContent = ch; b.dataset.k = ch;
+      b.setAttribute("aria-label","guess letter "+ch);
+      b.onclick = ()=>guess(ch);
+      div.appendChild(b);
+    });
+    host.appendChild(div);
+  });
+}
+function drawMan(){
+  const mistakes = G.max - G.left;
+  const stage = mistakes === 0 ? 0 : Math.max(1, Math.ceil(mistakes / G.max * 6));
+  document.querySelectorAll("svg.man .part").forEach(p=>p.classList.toggle("show", +p.dataset.p <= stage));
+}
+let toastT;
+function toast(msg, kind){
+  const t = $("#toast"); t.textContent = msg; t.className = "toast " + (kind||"");
+  t.hidden = false; clearTimeout(toastT); toastT = setTimeout(()=>t.hidden = true, 1500);
+}
+
+/* ============================================================
+   8. GUESSING
+   ============================================================ */
+function guess(ch){
+  if(!G || G.over) return;
+  ch = ch.toUpperCase();
+  if(!ALPHA.includes(ch)) return;
+  if(G.guessed.has(ch) || G.dropped.has(ch)) return;     // already used: no penalty
+  const key = document.querySelector('.key[data-k="'+ch+'"]');
+  G.guessed.add(ch);
+  const hits = G.slots.filter(s=>!s.space && s.ch===ch && !s.shown);
+  if(hits.length){
+    hits.forEach(s=>s.shown = true);                     // every occurrence at once
+    G.correct++;
+    if(key){ key.classList.add("good"); key.disabled = true; }
+    renderWord();
+    toast(hits.length>1 ? ch+" ×"+hits.length : "Yes — "+ch, "good");
+    if(G.slots.every(s=>s.shown)) win();
+  } else if(G.slots.some(s=>s.ch===ch)){                 // already visible as a free reveal
+    if(key){ key.classList.add("good"); key.disabled = true; }
+    toast(ch+" was already showing", "good");
+  } else {
+    G.left--; G.wrong.push(ch);
+    if(key){ key.classList.add("bad"); key.disabled = true; }
+    $("#g-word").classList.add("shake"); setTimeout(()=>$("#g-word").classList.remove("shake"), 330);
+    toast("No "+ch, "bad");
+    drawMan();
+    if(G.left <= 0) lose();
+  }
+  renderHUD();
+}
+document.addEventListener("keydown", e=>{
+  if($("#s-game").classList.contains("on") && $("#veil").hidden && /^[a-zA-Z]$/.test(e.key)) guess(e.key);
+});
+
+/* ============================================================
+   9. SCORING
+   ============================================================ */
+function scoreLevel(){
+  const c = CFG[G.diff];
+  const secs = (Date.now() - G.start)/1000;
+  const speed = secs < 45 ? 50 : secs < 90 ? 25 : 0;
+  let total = c.base + G.correct*20 - G.wrong.length*10 - G.hintsUsed*25 + 100 + G.left*c.perAttempt + speed;
+  if(G.hintsUsed === 0) total += 30;
+  return { total: Math.max(0, Math.round(total)),
+    parts:[["Base score",c.base],["Correct guesses",G.correct*20],["Wrong guesses",-G.wrong.length*10],
+      ["Hints used",-G.hintsUsed*25],["Level complete",100],["Attempts left ("+G.left+")",G.left*c.perAttempt],
+      ["Speed bonus",speed],["No-hint bonus",G.hintsUsed===0?30:0]] };
+}
+
+/* ============================================================
+   10. WIN / LOSE
+   ============================================================ */
+function win(){
+  G.over = true;
+  const s = scoreLevel(), sl = slot(G.catId, G.diff);
+  sl.score += s.total;
+  sl.completedLevel = Math.max(sl.completedLevel, G.n);   // replays never undo progress
+  persist(); renderHome();
+  const rows = s.parts.filter(p=>p[1]!==0)
+    .map(p=>'<div><span>'+p[0]+'</span><b>'+(p[1]>0?"+":"")+p[1]+'</b></div>').join("");
+  if(G.n === PER){
+    const i = DIFFS.indexOf(G.diff), nextD = DIFFS[i+1] || null;
+    modal(
+      '<h2>Category complete</h2>'+
+      '<p style="color:var(--muted);margin:6px 0">You cleared all 50 '+CFG[G.diff].label.toLowerCase()+
+      ' levels in '+G.L.categoryName+'.</p>'+
+      '<div class="answer">'+G.L.word+'</div>'+
+      '<div class="rows"><div><span>'+G.L.categoryName+' · '+CFG[G.diff].label+'</span><b>'+sl.score+'</b></div>'+
+      '<div><span>Total score</span><b>'+totalScore()+'</b></div></div>'+
+      '<div class="stack">'+
+      (nextD?'<button class="btn primary" data-act="play-'+nextD+'">Play '+CFG[nextD].label.toLowerCase()+'</button>':'')+
+      '<button class="btn ghost" data-act="cats">Back to categories</button></div>');
+  } else {
+    modal(
+      '<h2>Level complete</h2>'+
+      '<p style="color:var(--muted);margin:4px 0 0;font-size:14px">'+G.L.categoryName+' · '+CFG[G.diff].label+' · level '+G.n+'</p>'+
+      '<div class="answer">'+G.L.word+'</div>'+
+      '<div class="rows">'+rows+
+      '<div><span>Earned</span><b style="color:var(--mint)">+'+s.total+'</b></div>'+
+      '<div><span>Hints used</span><b>'+G.hintsUsed+'</b></div>'+
+      '<div><span>Total score</span><b>'+totalScore()+'</b></div></div>'+
+      '<div class="stack"><button class="btn primary" data-act="next">Next level</button>'+
+      '<button class="btn ghost" data-act="levels">Back to levels</button></div>');
+  }
+}
+function lose(){
+  G.over = true;
+  $("#g-hint").disabled = true;
+  G.slots.forEach(s=>{ if(!s.shown){ s.shown = true; s.missed = true; } });
+  renderWord();
+  setTimeout(()=>modal(
+    '<h2>Out of attempts</h2>'+
+    '<p style="color:var(--muted);margin:2px 0 0">The answer was</p>'+
+    '<div class="answer">'+G.L.word+'</div>'+
+    '<p style="color:#ded7ee;margin:8px 0 0">Level '+G.n+' stays open — nothing you had already unlocked is lost.</p>'+
+    '<div class="stack" style="margin-top:18px"><button class="btn primary" data-act="retry">Try again</button>'+
+    '<button class="btn ghost" data-act="levels">Back to levels</button></div>'), 700);
+}
+
+/* ============================================================
+   11. HINTS
+   ============================================================ */
+function hintMenu(){
+  if(!G || G.over || G.hints <= 0) return;
+  const hiddenLeft = G.slots.some(s=>!s.shown);
+  const droppable = ALPHA.some(c=>!G.guessed.has(c) && !G.dropped.has(c) && !G.L.word.includes(c));
+  modal(
+    '<h2>Use a hint</h2>'+
+    '<p style="color:var(--muted);margin:4px 0 16px">'+G.hints+' left. Each one costs 25 points and no attempts.</p>'+
+    '<div class="hintlist">'+
+    '<button class="hintopt" data-hint="letter"'+(hiddenLeft?'':' disabled')+'>Reveal a letter<small>Uncovers one hidden letter of the answer</small></button>'+
+    '<button class="hintopt" data-hint="cat">Show the category<small>Names the kind of thing the answer is</small></button>'+
+    '<button class="hintopt" data-hint="extra">Extra clue<small>A second description of the answer</small></button>'+
+    '<button class="hintopt" data-hint="drop"'+(droppable?'':' disabled')+'>Remove wrong letters<small>Takes two letters that are not in the answer off the keyboard</small></button>'+
+    '</div><div class="stack" style="margin-top:16px"><button class="btn ghost" data-act="close">Cancel</button></div>');
+}
+function useHint(kind){
+  if(!G || G.over || G.hints <= 0) return;
+  let ok = true;
+  if(kind === "letter"){
+    const hidden = G.slots.map((s,i)=>(!s.shown ? i : -1)).filter(i=>i>=0);
+    if(!hidden.length) ok = false;
+    else{
+      const ch = G.slots[hidden[Math.floor(Math.random()*hidden.length)]].ch;
+      G.slots.forEach(s=>{ if(s.ch === ch) s.shown = true; });
+      G.guessed.add(ch);
+      const key = document.querySelector('.key[data-k="'+ch+'"]');
+      if(key){ key.classList.add("good"); key.disabled = true; }
+      renderWord(); toast("Revealed "+ch, "good");
+    }
+  } else if(kind === "cat"){
+    $("#g-cat2").textContent = "Category: " + G.L.categoryName;
+    $("#g-cat2").style.display = "block";
+  } else if(kind === "extra"){
+    const words = G.L.word.split(" ").length, letters = G.L.word.replace(/ /g,"").length;
+    $("#g-extra").textContent = G.L.additionalHint ? G.L.additionalHint :
+      "It is " + (words>1 ? words+" words" : "one word") + " of " + letters +
+      " letters in " + G.L.categoryName.toLowerCase() + ", and it begins with " + G.L.word[0] + ".";
+    $("#g-extra").style.display = "block";
+  } else if(kind === "drop"){
+    const pool = ALPHA.filter(c=>!G.guessed.has(c) && !G.dropped.has(c) && !G.L.word.includes(c));
+    if(!pool.length) ok = false;
+    else{
+      for(let k=0;k<2 && pool.length;k++){
+        const c = pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+        G.dropped.add(c);
+        const key = document.querySelector('.key[data-k="'+c+'"]');
+        if(key){ key.classList.add("dropped"); key.disabled = true; }
+      }
+      toast("Two letters removed", "good");
+    }
+  }
+  if(ok){ G.hints--; G.hintsUsed++; setTimeout(()=>toast("Hint used  −25 points","bad"), 900); }
+  closeModal(); renderHUD();
+  if(G.slots.every(s=>s.shown) && !G.over) win();
+}
+
+/* ============================================================
+   12. MODALS
+   ============================================================ */
+function modal(html){ $("#card").innerHTML = html; $("#veil").hidden = false;
+  const b = $("#card").querySelector("button"); if(b) b.focus(); }
+function closeModal(){ $("#veil").hidden = true; }
+$("#veil").addEventListener("click", e=>{
+  const t = e.target.closest("[data-act],[data-hint]"); if(!t) return;
+  if(t.dataset.hint) return useHint(t.dataset.hint);
+  const a = t.dataset.act;
+  if(a === "close") closeModal();
+  else if(a === "next"){ closeModal(); startLevel(G.catId, G.diff, Math.min(PER, G.n+1)); }
+  else if(a === "retry"){ closeModal(); startLevel(G.catId, G.diff, G.n); }
+  else if(a === "levels"){ closeModal(); openLevels(G.catId, G.diff); }
+  else if(a === "cats"){ closeModal(); renderCategories(); show("categories"); }
+  else if(a && a.startsWith("play-")){ closeModal(); openLevels(G.catId, a.slice(5)); }
+  else if(a === "reset-yes"){ save = emptySave(); persist(); closeModal();
+    renderHome(); renderSettings(); toast("All progress reset","good"); }
+});
+document.addEventListener("keydown", e=>{ if(e.key === "Escape" && !$("#veil").hidden) closeModal(); });
+
+/* ============================================================
+   13. SCREENS
+   ============================================================ */
+let curCat = CATS[0].id, curDiff = "easy";
+function show(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
+  $("#s-"+id).classList.add("on");
+  window.scrollTo(0,0);
+}
+function renderHome(){
+  const done = totalDone();
+  $("#home-score").textContent = totalScore();
+  $("#home-levels").textContent = done;
+  $("#home-cats").textContent = CATS.filter(c=>catDone(c.id)>0).length + " / " + CATS.length;
+  $("#home-bar").style.width = (done/TOTAL_LEVELS*100).toFixed(2) + "%";
+  $("#home-pct").textContent = (done/TOTAL_LEVELS*100).toFixed(1) + "% of " + TOTAL_LEVELS + " levels";
+}
+function renderCategories(){
+  const host = $("#cat-grid"); host.innerHTML = "";
+  CATS.forEach(c=>{
+    const b = document.createElement("button");
+    b.className = "cat";
+    const bars = DIFFS.map(d=>'<span><i style="width:'+(slot(c.id,d).completedLevel/PER*100)+
+      '%;background:'+CFG[d].colour+'"></i></span>').join("");
+    const done = catDone(c.id);
+    b.innerHTML = '<div class="ic">'+c.icon+'</div><h3>'+c.name+'</h3>'+
+      '<div class="sub">150 levels · 50 per difficulty</div>'+
+      '<div class="mini">'+bars+'</div>'+
+      '<div class="done">'+(done ? done+' / 150 completed' : 'Not started')+'</div>';
+    b.setAttribute("aria-label", c.name + ", " + done + " of 150 levels completed");
+    b.onclick = ()=>openDifficulty(c.id);
+    host.appendChild(b);
+  });
+}
+function openDifficulty(catId){
+  curCat = catId;
+  const c = catById(catId);
+  $("#d-title").textContent = c.icon + " " + c.name;
+  $("#d-crumb").textContent = "Each difficulty below keeps its own 50 levels and its own saved progress.";
+  const host = $("#diff-cards"); host.innerHTML = "";
+  DIFFS.forEach(d=>{
+    const cf = CFG[d], done = slot(catId,d).completedLevel;
+    const b = document.createElement("button");
+    b.className = "diffcard"; b.style.setProperty("--dc", cf.colour);
+    b.innerHTML = '<h3>'+cf.label+'</h3><div class="desc">'+cf.blurb+'</div>'+
+      '<div class="meta"><span>'+cf.attempts+' attempts</span><span>'+cf.hints+' hint'+(cf.hints>1?'s':'')+'</span>'+
+      '<span>'+cf.base+' base points</span><span>'+done+' / 50 completed</span><span>'+slot(catId,d).score+' points</span></div>'+
+      '<div class="bar"><i style="width:'+(done/PER*100)+'%"></i></div>'+
+      '<span class="cont">'+(done===PER ? 'All 50 cleared — replay any level'
+        : done===0 ? 'Start level 1' : 'Continue level '+nextLevel(catId,d))+'</span>';
+    b.onclick = ()=>openLevels(catId, d);
+    host.appendChild(b);
+  });
+  show("difficulty");
+}
+function openLevels(catId, diff){
+  curCat = catId; curDiff = diff;
+  const c = catById(catId), cf = CFG[diff], done = slot(catId,diff).completedLevel;
+  document.documentElement.style.setProperty("--c", cf.colour);
+  $("#lv-title").innerHTML = c.icon + " " + c.name + ' · <span style="color:'+cf.colour+'">'+cf.label+'</span>';
+  $("#lv-prog").textContent = done + " / 50 completed";
+  $("#lv-score").textContent = "Score " + slot(catId,diff).score;
+  $("#lv-bar").style.width = (done/PER*100) + "%";
+  const grid = $("#lv-grid"); grid.innerHTML = "";
+  for(let n=1;n<=PER;n++){
+    const state = n <= done ? "done" : n === done+1 ? "next" : "locked";
+    const b = document.createElement("button");
+    b.className = "lvl " + state;
+    b.innerHTML = n + '<small>' + (state==="done" ? "done" : state==="next" ? "play" : "locked") + '</small>';
+    b.setAttribute("aria-label", "Level "+n+", "+(state==="locked"?"locked":state==="done"?"completed, tap to replay":"ready to play"));
+    if(state === "locked") b.disabled = true; else b.onclick = ()=>startLevel(catId, diff, n);
+    grid.appendChild(b);
+  }
+  show("levels");
+}
+function renderSettings(){
+  const rows = [];
+  CATS.forEach(c=>{
+    const done = catDone(c.id);
+    if(!done) return;
+    const detail = DIFFS.filter(d=>slot(c.id,d).completedLevel>0)
+      .map(d=>CFG[d].label+" "+slot(c.id,d).completedLevel+"/50").join(" · ");
+    rows.push('<div><span>'+c.icon+' '+c.name+'</span><b>'+detail+'</b></div>');
+  });
+  $("#set-rows").innerHTML = rows.join("") +
+    '<div><span>Levels completed</span><b>'+totalDone()+' / '+TOTAL_LEVELS+'</b></div>'+
+    '<div><span>Total score</span><b>'+totalScore()+'</b></div>';
+  $("#set-empty").textContent = rows.length ? "" : "Nothing played yet — every category starts at level 1.";
+}
+document.addEventListener("click", e=>{
+  const t = e.target.closest("[data-go]"); if(!t) return;
+  const to = t.dataset.go;
+  if(to === "categories") renderCategories();
+  if(to === "settings") renderSettings();
+  if(to === "difficulty"){ openDifficulty(curCat); return; }
+  if(to === "levels"){ openLevels(curCat, curDiff); return; }
+  show(to);
+});
+$("#g-hint").onclick = hintMenu;
+$("#set-reset").onclick = ()=> modal(
+  '<h2>Reset all progress?</h2>'+
+  '<p style="color:#ded7ee;line-height:1.6">This deletes every completed level and every score, in all '+
+  CATS.length+' categories and all three difficulties. It cannot be undone.</p>'+
+  '<div class="stack" style="margin-top:18px"><button class="btn danger" data-act="reset-yes">Reset</button>'+
+  '<button class="btn ghost" data-act="close">Cancel</button></div>');
+
+renderHome();
+</script>
+</body>
+</html>
